@@ -7,11 +7,12 @@ interface Props {
     value?: string;
     onChangeText?: (text: string) => void;
     onPress?: () => void;
+    className?: string;
 }
 
-const SearchBar = ({ placeholder, value, onChangeText, onPress }: Props) => {
+const SearchBar = ({ placeholder, value, onChangeText, onPress, className }: Props) => {
     return (
-        <View className="flex-row items-center bg-dark-200 rounded-full px-5 py-4">
+        <View className={`flex-row items-center bg-dark-200 rounded-full px-5 py-4 ${className}`}>
             <Image
                 source={icons.search}
                 className="w-5 h-5"

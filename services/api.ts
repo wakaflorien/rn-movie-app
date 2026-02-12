@@ -1,18 +1,17 @@
 // services/api.ts
 
+import { CONFIG } from "@/constants/config";
+
 const TMDB_CONFIG = {
-    BASE_URL: 'https://api.themoviedb.org/3',
-    API_KEY: process.env.EXPO_PUBLIC_API_KEY,
-    headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.EXPO_PUBLIC_MOVIE_API_ACCESS_TOKEN}`,
-    },
+    BASE_URL: CONFIG.API.BASE_URL,
+    headers: CONFIG.HEADERS,
+    API_KEY: process.env.EXPO_PUBLIC_API_KEY, 
 };
 
-export const fetchMovies = async ({ query }: { query: string }) => {
+export const fetchMovies = async ({ query, page = 1 }: { query: string; page?: number }) => {
     const url = query ?
-        `${TMDB_CONFIG.BASE_URL}/search/movie?query=${encodeURIComponent(query)}` :
-        `${TMDB_CONFIG.BASE_URL}/discover/movie?sort_by=popularity.desc`;
+        `${TMDB_CONFIG.BASE_URL}/search/movie?query=${encodeURIComponent(query)}&page=${page}` :
+        `${TMDB_CONFIG.BASE_URL}/discover/movie?sort_by=popularity.desc&page=${page}`;
 
     const response = await fetch(url, {
         method: 'GET',
@@ -48,6 +47,50 @@ export const fetchMovieDetails = async (
         return data;
     } catch (error) {
         console.error("Error fetching movie details:", error);
+        throw error;
+    }
+};
+
+export const fetchMovieCast = async (movieId: string) => {
+    try {
+        const response = await fetch(
+            `${TMDB_CONFIG.BASE_URL}/movie/${movieId}/credits?api_key=${TMDB_CONFIG.API_KEY}`,
+            {
+                method: "GET",
+                headers: TMDB_CONFIG.headers,
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch movie cast: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.cast;
+    } catch (error) {
+        console.error("Error fetching movie cast:", error);
+        throw error;
+    }
+};
+
+export const fetchMovieSimilar = async (movieId: string) => {
+    try {
+        const response = await fetch(
+            `${TMDB_CONFIG.BASE_URL}/movie/${movieId}/similar?api_key=${TMDB_CONFIG.API_KEY}`,
+            {
+                method: "GET",
+                headers: TMDB_CONFIG.headers,
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch similar movies: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.results;
+    } catch (error) {
+        console.error("Error fetching similar movies:", error);
         throw error;
     }
 };
