@@ -1,26 +1,20 @@
 import { icons } from "@/constants/icons";
-import { images } from "@/constants/images";
+import { BlurView } from "expo-blur";
 import { Tabs } from "expo-router";
-import { Image, ImageBackground, Text, View } from "react-native";
+import { Image, View } from "react-native";
 
 export default function TabsComponent() {
     const TabsIcon = ({ focused, icon, title }: any) => {
         if (focused) {
             return (
-                <ImageBackground
-                    source={images.highlight}
-                    className="flex flex-row w-full flex-1 min-w-[112px] min-h-16 mt-4 justify-center items-center rounded-full overflow-hidden"
-                >
-                    <Image source={icon} tintColor="#151312" className="size-5" />
-                    <Text className="text-secondary text-base font-semibold ml-2">
-                        {title}
-                    </Text>
-                </ImageBackground>
+                <View className="flex-row w-12 h-12 justify-center items-center rounded-full bg-accent">
+                    <Image source={icon} tintColor="#fff" className="size-5" />
+                </View>
             );
         }
 
         return (
-            <View className="size-full justify-center items-center mt-4 rounded-full">
+            <View className="justify-center items-center">
                 <Image source={icon} tintColor="#A8B5DB" className="size-5" />
             </View>
         );
@@ -36,16 +30,22 @@ export default function TabsComponent() {
                     alignItems: "center",
                 },
                 tabBarStyle: {
-                    backgroundColor: "#0F0D23",
-                    borderRadius: 50,
-                    marginHorizontal: 20,
-                    marginBottom: 36,
-                    height: 52,
+                    backgroundColor: "transparent",
+                    elevation: 0, // invalid on iOS but good for explicit intent, border handled below
+                    borderTopWidth: 0,
                     position: "absolute",
-                    overflow: "hidden",
-                    borderWidth: 1,
-                    borderColor: "#0F0D23",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 84,
                 },
+                tabBarBackground: () => (
+                    <BlurView
+                        intensity={20} // Adjusted intensity for a subtle glass effect
+                        tint="systemThinMaterialDark" // Uses native iOS material blur
+                        className="overflow-hidden rounded-[50px] mx-[10px] mb-9 h-[84px] border border-white/10 absolute bottom-0 left-0 right-0"
+                    />
+                ),
             }}>
             <Tabs.Screen
                 name={`index`}

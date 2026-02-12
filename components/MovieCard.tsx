@@ -3,6 +3,8 @@ import { Image, Text, TouchableOpacity, View } from "react-native";
 
 import { icons } from "@/constants/icons";
 
+import { CONFIG } from "@/constants/config";
+
 const MovieCard = ({
     id,
     poster_path,
@@ -16,8 +18,8 @@ const MovieCard = ({
                 <Image
                     source={{
                         uri: poster_path
-                            ? `https://image.tmdb.org/t/p/w500${poster_path}`
-                            : "https://placehold.co/600x400/1a1a1a/FFFFFF.png",
+                            ? `${CONFIG.API.IMAGE_BASE_URL}${poster_path}`
+                            : CONFIG.API.PLACEHOLDER_IMAGE,
                     }}
                     className="w-full h-52 rounded-lg"
                     resizeMode="cover"
