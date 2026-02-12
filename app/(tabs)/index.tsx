@@ -1,92 +1,132 @@
+import { useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import { FlatList, Image, RefreshControl, Text, View } from "react-native";
+
 import MovieCard from "@/components/MovieCard";
 import SearchBar from "@/components/SearchBar";
 import TrendingCard from "@/components/TrendingCard";
+import { ErrorState } from "@/components/common/ErrorState";
+import { ScreenWrapper } from "@/components/common/ScreenWrapper";
+
+import { MovieCardSkeleton } from "@/components/skeletons/MovieCardSkeleton";
 import { icons } from "@/constants/icons";
-import { images } from "@/constants/images";
 import useFetch from "@/hooks/useFetch";
 import { fetchMovies } from "@/services/api";
 import { getTrendingMovies } from "@/services/appwrite";
-import { useRouter } from "expo-router";
-import { ActivityIndicator, FlatList, Image, ScrollView, Text, View } from "react-native";
 
 export default function Index() {
     const router = useRouter();
+    const [refreshing, setRefreshing] = useState(false);
 
     const {
         data: trendingMovies,
         loading: trendingLoading,
         error: trendingError,
+        refetch: refetchTrending
     } = useFetch(getTrendingMovies);
 
-    const { data: movies, loading: moviesLoading, error: moviesError } = useFetch(() => fetchMovies({ query: '' }));
+    const {
+        data: movies,
+        loading: moviesLoading,
+        error: moviesError,
+        refetch: refetchMovies
+    } = useFetch(() => fetchMovies({ query: '' }));
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await Promise.all([refetchTrending(), refetchMovies()]);
+        setRefreshing(false);
+    }, [refetchTrending, refetchMovies]);
+
+    const isLoading = trendingLoading || moviesLoading;
+    const isError = trendingError || moviesError;
+
+    // ... inside component
+    if (isLoading && !refreshing) {
+        return (
+            <ScreenWrapper>
+                <View className="flex-row flex-wrap justify-between mt-20">
+                    {Array.from({ length: 6 }).map((_, index) => (
+                        <MovieCardSkeleton key={index} />
+                    ))}
+                </View>
+            </ScreenWrapper>
+        );
+    }
+
+    if (isError) {
+        return (
+            <ScreenWrapper>
+                <ErrorState
+                    message={moviesError?.message || trendingError?.message}
+                    onRetry={onRefresh}
+                />
+            </ScreenWrapper>
+        );
+    }
 
     return (
-        <View className="flex-1 bg-primary">
-            <Image source={images.bg} className="absolute w-full" />
+        <ScreenWrapper className="px-0">
+            {/* added px-0 to override default padding because FlatList needs full width for column spacing logic if needed, 
+            but kept standard padding in header/footer if preferred. 
+            Actually, let's keep consistent padding. ScreenWrapper has px-5. 
+            If I want FlatList to handle padding, I should remove it from ScreenWrapper or override.
+            Let's override className="px-0" and add padding to FlatList contentContainer. */}
 
-            <ScrollView
+            <Image source={icons.logo} className="w-12 h-10 mt-5 mb-5 mx-auto self-center" />
+
+            <FlatList
+                data={movies}
+                renderItem={({ item }) => <MovieCard {...item} />}
+                keyExtractor={(item) => item.id.toString()}
+                numColumns={3}
+                columnWrapperStyle={{
+                    justifyContent: "flex-start",
+                    gap: 20,
+                    marginBottom: 20,
+                }}
+                contentContainerStyle={{
+                    paddingBottom: 20,
+                    paddingHorizontal: 20,
+                }}
                 showsVerticalScrollIndicator={false}
-                        contentContainerStyle={{
-                minHeight: "100%",
-                paddingBottom: 10,
-            }} className="flex-1 px-5">
-                <Image source={icons.logo} className="w-12 h-10 mt-20 mb-5 mx-auto" />
-
-                {moviesLoading || trendingLoading ? (<ActivityIndicator size="large" color="#0000ff" className="mt-10 self-center" />) : moviesError || trendingError ? <Text>Error: {moviesError?.message}</Text> : (
-                    <View className="flex-1 mt-5">
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#AB8BFF" />
+                }
+                ListHeaderComponent={() => (
+                    <View className="mb-5">
                         <SearchBar
                             onPress={() => router.push('/search')}
-                            placeholder="SearchBar"
+                            placeholder="Search for a movie"
+                            className="mb-8"
                         />
 
-                        {trendingMovies && (
-                            <View className="mt-10">
+                        {trendingMovies && trendingMovies.length > 0 && (
+                            <View className="mb-8">
                                 <Text className="text-lg text-white font-bold mb-3">
-                                    Popilar Movies
+                                    Popular Movies
                                 </Text>
 
                                 <FlatList
                                     horizontal
                                     showsHorizontalScrollIndicator={false}
-                                    className="mb-4 mt-3"
                                     data={trendingMovies}
-                                    contentContainerStyle={{
-                                        gap: 26,
-                                    }}
                                     renderItem={({ item, index }) => (
                                         <TrendingCard movie={item} index={index} />
                                     )}
                                     keyExtractor={(item) => item.movie_id.toString()}
-                                    ItemSeparatorComponent={() => <View className="w-4" />}
+                                    ItemSeparatorComponent={() => <View className="w-6" />}
+                                    contentContainerStyle={{ paddingRight: 20 }}
                                 />
                             </View>
                         )}
 
-                        <>
-                            <Text className="text-lg text-white font-bold mt-5 mb-3">
-                                Latest Movies
-                            </Text>
-
-                            <FlatList
-                                data={movies}
-                                renderItem={({ item }) => <MovieCard {...item} />}
-                                keyExtractor={(item) => item.id.toString()}
-                                numColumns={3}
-                                columnWrapperStyle={{
-                                    justifyContent: "flex-start",
-                                    gap: 20,
-                                    paddingRight: 5,
-                                    marginBottom: 10,
-                                }}
-                                className="mt-2 pb-32"
-                                scrollEnabled={false}
-                            />
-                        </>
-
+                        <Text className="text-lg text-white font-bold mb-3">
+                            Latest Movies
+                        </Text>
                     </View>
                 )}
-
-            </ScrollView>
-        </View>
+            />
+        </ScreenWrapper>
     );
 }

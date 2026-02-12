@@ -1,3 +1,4 @@
+import { CONFIG } from "@/constants/config";
 import { Client, Databases, ID, Query } from "react-native-appwrite";
 
 const ENDPOINT = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!;
@@ -33,7 +34,7 @@ export const updateSearchCount = async (query: string, movie: Movie) => {
                 movie_id: movie.id,
                 title: movie.title,
                 count: 1,
-                poster_url: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
+                poster_url: `${CONFIG.API.IMAGE_BASE_URL}${movie.poster_path}`,
             });
         }
     } catch (error) {
